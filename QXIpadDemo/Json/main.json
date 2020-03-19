@@ -1,0 +1,17 @@
+[
+  {
+    "className" : "QXHomeVC",
+    "title" : "首页",
+    "image" : "home"
+  },
+  {
+    "className" : "QXMessageVC",
+    "title" : "消息",
+    "image" : "message"
+  },
+  {
+    "className" : "QXMineVC",
+    "title" : "我的",
+    "image" : "profile"
+  }
+]
