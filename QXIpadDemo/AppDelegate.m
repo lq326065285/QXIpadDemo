@@ -31,6 +31,7 @@
 
 -(void)setupIpadRootView{
     self.splitRootViewController = [QXSplitRootViewController createSplitVc];
+    [QXSplitRootViewController loadRightDefaultVCWithIsCreate:YES];
     self.window.rootViewController = self.splitRootViewController;
     [QXSplitRootViewController updateSplitViewContollers];
 }

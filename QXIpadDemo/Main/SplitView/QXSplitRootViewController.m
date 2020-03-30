@@ -9,7 +9,7 @@
 #import "QXSplitRootViewController.h"
 #import "AppDelegate.h"
 #import "QXSplitRightDefaultVC.h"
-CGFloat _windowWidth;
+CGSize _windowSize;
 @interface QXSplitRootViewController ()
 {
     
@@ -28,7 +28,6 @@ CGFloat _windowWidth;
 +(instancetype)createSplitVc{
     //创建分割控制器
    QXSplitRootViewController * splitRootViewController = [[QXSplitRootViewController alloc]init];
-//    [QXSplitRootViewController loadSplitControllerDetailDefaultVC];
     splitRootViewController.maximumPrimaryColumnWidth = [UIScreen mainScreen].bounds.size.width;
     //设置分割控制器分割模式
     splitRootViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
@@ -46,16 +45,26 @@ CGFloat _windowWidth;
 
 
 +(void)loadSplitControllerDetailDefaultVC{
-    [self createDetailVCWithIsDefault:YES];
+    [self loadRightDefaultVCWithIsCreate:NO];
 }
 
 +(BOOL)isShowSplitDetailVC{
-    if (ScreenWidth > ScreenHeight) {//宽>高 横屏
-        CGFloat tWindowWidth = _windowWidth;
-        if (tWindowWidth == 0) {
-            tWindowWidth = [UIApplication sharedApplication].keyWindow.bounds.size.width;
+    BOOL isLandscape;
+    CGFloat screenWidth = 0;
+    if (_windowSize.width == ScreenHeight){ //说明系统比较低，设备比较老，回掉了该方法，设备的宽高还没更新，目前测出来的问题是当前设备不支持split view / side Over模式  ps:我这边是iPad mini第一代产品 🤦‍♀️测试小姐姐提bug了，不能不改
+        isLandscape = (_windowSize.width > _windowSize.height);
+        screenWidth = _windowSize.width;
+    }else{ //初始化状态
+        isLandscape = (ScreenWidth > ScreenHeight);
+        screenWidth = ScreenWidth;
+    }
+    
+    if (isLandscape) {//宽>高 横屏
+        CGFloat appWindowWidth = _windowSize.width;
+        if (appWindowWidth == 0) {
+            appWindowWidth = [UIApplication sharedApplication].keyWindow.bounds.size.width;
         }
-        if (tWindowWidth > ScreenWidth / 2.0) { //多任务大于半
+        if (appWindowWidth > screenWidth / 2.0) { //多任务大于半
             return YES;
         }else{
             return NO;
@@ -79,11 +88,11 @@ CGFloat _windowWidth;
 
 #pragma mark - private method
 
-+(UINavigationController *)createDetailVCWithIsDefault:(BOOL)isDefault{
++(UINavigationController *)loadRightDefaultVCWithIsCreate:(BOOL)isCreate{
     QXSplitRightDefaultVC * defaultVC = [QXSplitRightDefaultVC new];
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     QXNavigationController *detailNav = [[QXNavigationController alloc] initWithRootViewController:defaultVC];
-    if (!isDefault || [appDelegate.splitRootViewController.viewControllers.lastObject isKindOfClass:[UINavigationController class]]) {
+    if (isCreate || [appDelegate.splitRootViewController.viewControllers.lastObject isKindOfClass:[UINavigationController class]]) {
         appDelegate.splitRootViewController.viewControllers = @[appDelegate.tabBarController,detailNav];
         defaultVC.navigationItem.leftBarButtonItem = appDelegate.splitRootViewController.displayModeButtonItem;
         defaultVC.navigationItem.leftItemsSupplementBackButton = YES;
@@ -96,7 +105,11 @@ CGFloat _windowWidth;
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     NSArray * splitViewControllers = appDelegate.splitRootViewController.viewControllers;
     if (splitViewControllers.count != 1 || appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction != 1) {
-        appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction = 1;
+        if (@available(iOS 13.0, *)) {
+            appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction = 1;
+        }else{
+            appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction = 0;
+        }
         UINavigationController * detailNav = appDelegate.splitRootViewController.viewControllers.lastObject;
         if ([detailNav isKindOfClass:[UINavigationController class]]) {//如果是tabBar直接过掉
             QXBaseViewController * firstVc = detailNav.viewControllers.firstObject;
@@ -137,9 +150,9 @@ CGFloat _windowWidth;
 +(void)showSplitMasterAndDetail{
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     NSArray * splitViewControllers = appDelegate.splitRootViewController.viewControllers;
-    if (splitViewControllers.count != 2 || appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction == 1) {//如果最开始的viewControllers就为2说明之前就是这种模式，不用管
+    if (splitViewControllers.count != 2 || appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction != kSplitScale) {//如果最开始的viewControllers就为2说明之前就是这种模式，不用管
         appDelegate.splitRootViewController.preferredPrimaryColumnWidthFraction = kSplitScale;
-        UINavigationController * detailNav = [self createDetailVCWithIsDefault:NO];
+        UINavigationController * detailNav = [self loadRightDefaultVCWithIsCreate:YES];
         UITabBarController * tbc = appDelegate.splitRootViewController.viewControllers.firstObject;
         UINavigationController * selectNav = tbc.selectedViewController;
         if (selectNav.viewControllers.count > 1) {
@@ -182,8 +195,7 @@ CGFloat _windowWidth;
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-//    NSLog(@"viewWillTransitionToSize: size %@", NSStringFromCGSize(size));
-    _windowWidth = size.width;
+    _windowSize = size;
     [QXSplitRootViewController updateSplitViewContollers];
 }
 

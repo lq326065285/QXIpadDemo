@@ -21,7 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 显示detailVC默认vc
 +(void)loadSplitControllerDetailDefaultVC;
-
+///初始化的时候用
++(UINavigationController *)loadRightDefaultVCWithIsCreate:(BOOL)isCreate;
 /// 是否显示右边详情vc
 +(BOOL)isShowSplitDetailVC;
 
